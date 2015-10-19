@@ -1,2 +1,2 @@
 # LetMeCode
-Lightweight code editor with live preview for various html/javascript sketches
+Lightweight online code environment for quick javascript sketches
