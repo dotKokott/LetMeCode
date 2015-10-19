@@ -1,0 +1,142 @@
+<html>
+  <head>
+    <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.11.4/jquery-ui.min.js"></script>
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.11.4/themes/dot-luv/jquery-ui.css">
+
+    <script src="codemirror/codemirror.js"></script>
+    <script src="codemirror/mode/javascript/javascript.js"></script>
+    <script src="codemirror/mode/xml/xml.js"></script>
+    <script src="codemirror/mode/css/css.js"></script>
+
+    <script src="codemirror/mode/htmlmixed/htmlmixed.js"></script>
+    <script src="codemirror/addon/hint/show-hint.js"></script>
+    <script src="codemirror/addon/hint/javascript-hint.js"></script>
+    <script src="codemirror/addon/hint/css-hint.js"></script>
+    <script src="codemirror/addon/hint/xml-hint.js"></script>
+    <script src="codemirror/addon/hint/html-hint.js"></script>
+    <script src="codemirror/addon/selection/active-line.js"></script>
+
+    <link rel="stylesheet" href="codemirror/codemirror.css">
+    <link rel="stylesheet" href="codemirror/addon/hint/show-hint.css">
+
+    <link rel="stylesheet" href="css/default.css">
+
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="foreground">
+      <div id="toolbar">
+        <label for="template">Template:</label>
+        <select name="template" id="template">
+          <option value='empty.html'>Empty</option>
+          <option value='canvas.html'>Canvas</option>
+        </select>
+
+        <button id="insert_template">Insert template</button>
+      </div>
+      <div id="codearea">
+        <textarea id="code" name="code">
+        </textarea>
+      </div>
+
+    </div>
+
+    <div id="background">
+      <iframe height="100%" width="100%" id="output" src=""></iframe>
+    </div>
+
+
+
+    <script>
+      var code = {};
+      var foreground = $("#foreground");
+      var background = $("#background");
+
+      init();
+      function init() {
+        code = CodeMirror.fromTextArea(document.getElementById('code'), {
+          value: "<html> </html>",
+          mode:  "htmlmixed",
+          lineNumbers: true,
+          styleActiveLine: true,
+          extraKeys: {"Ctrl-Space": "autocomplete"},
+
+          matchBrackets: true,
+          indentWithTabs: true,
+          tabSize: 4,
+          indentUnit: 4
+        });
+
+        code.on("change", function(cm, change) {
+          //compile();
+        });
+      }
+
+      $(window).bind('keydown', function(e) {
+        handleKeys(e);
+      });
+
+      $('#insert_template').click(function() {
+        var text = code.getValue() + "\n";
+
+        var value = $('#template').val();
+        $.get("templates/" + value, function(response) {
+            text += response;
+            code.setValue(text);
+
+            compile();
+        });
+      });
+
+      function handleKeys(e) {
+        if(e.keyCode == 27) {
+          if(foreground.is(":visible")) {
+            $(foreground).slideUp("swing", function() {
+              foreground.hide();
+              background.css("z-index", "10");
+            });
+
+            return;
+          }
+
+          if(!foreground.is(":visible")) {
+            $(foreground).slideDown("swing", function() {
+              foreground.show();
+              background.css("z-index", "-10");
+            });
+
+            return;
+          }
+        }
+        //Control-S
+        if(e.ctrlKey && (e.which == 83)) {
+          e.preventDefault();
+
+          compile();
+
+          return false;
+        }
+      }
+
+      function compile() {
+        var doc = document.getElementById('output').contentWindow.document;
+        doc.open();
+
+        doc.write(code.getValue());
+        doc.close();
+
+        $(document.getElementById('output').contentWindow.document.body).bind('keydown', function(e) {
+          handleKeys(e);
+        });
+
+      }
+    </script>
+  </body>
+</html>
